@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Candidato à vaga</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .edit-btn, .delete-btn {
+            display: none;
+        }
+
+        tr:hover .edit-btn, tr:hover .delete-btn {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="mt-5">Candidato à vaga de trabalho</h1>
+
+    <form id="candidatoForm" class="mt-4">
+        <!--atributo hidden para o ID do produto não aparece como campo, apenas na listagem-->
+        <input type="hidden" id="candidatoId">
+        <div class="mb-3">
+            <label for="nome" class="form-label">Nome:</label>
+            <input type="text" id="nome" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="login" class="form-label">Login:</label>
+            <input type="text" id="login" class="form-control" step="0.01" required>
+        </div>
+        <div class="mb-3">
+            <label for="senha" class="form-label">Senha:</label>
+            <input type="password" id="senha" class="form-control" step="0.01" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">E-mail:</label>
+            <input type="email" id="email" class="form-control" step="0.01" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+    </form>
+
+    <table class="table mt-4">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Login</th>
+            <th>Senha</th>
+            <th>E-mail</th>
+        </tr>
+        </thead>
+        <tbody id="candidatoTable">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/candidatos'; //aponta para um endpoint que retorna um json?
+
+    const candidatoForm = document.getElementById('candidatoForm');
+    const candidatoIdInput = document.getElementById('candidatoId');
+    const nomeInput = document.getElementById('nome');
+    const loginInput = document.getElementById('login');
+    const senhaInput = document.getElementById('senha');
+    const emailInput = document.getElementById('email');
+    const candidatoTable = document.getElementById('candidatoTable');
+
+    candidatoForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const candidatoId = candidatoIdInput.value;
+        const nome = nomeInput.value;
+        const login = loginInput.value;
+        const senha = senhaInput.value;
+        const email = emailInput.value;
+
+        if (candidatoId) {
+            await fetch(API_URL + '/' + candidatoId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({nome, login, senha, email})
+            });
+        } else {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({nome, login, senha, email})
+            });
+        }
+
+        resetForm();
+        await loadCandidatos();
+    });
+
+    function resetForm() {
+        candidatoIdInput.value = '';
+        nomeInput.value = '';
+        loginInput.value = '';
+        senhaInput.value = '';
+        emailInput.value = '';
+    }
+
+    async function loadCandidatos() {
+        const response = await fetch(API_URL); // solicitação http para a url // retornando um html
+        const candidatos = await response.json();
+
+        let html = '';
+        for (const candidato of candidatos) {
+            html += `
+            <tr>
+                <td>${candidato.id}</td>
+                <td>${candidato.nome}</td>
+                <td>${candidato.login}</td>
+                <td>${candidato.senha}</td>
+                <td>${candidato.email}</td>
+                <td>
+                <button class="edit-btn btn btn-success" onclick="editCandidato(${candidato.id})">Editar</button>
+                <button class="delete-btn btn btn-danger" onclick="deleteCandidato(${candidato.id})">Excluir</button>
+                </td>
+            </tr>
+                `;
+        }
+        candidatoTable.innerHTML = html;
+    }
+
+    async function editCandidato(id) {
+        const response = await fetch(API_URL + '/' + id);
+        const candidato = await response.json();
+        candidatoIdInput.value = candidato.id;
+        nomeInput.value = candidato.nome;
+        loginInput.value = candidato.login;
+        senhaInput.value = candidato.senha;
+        emailInput.value = candidato.email;
+    }
+
+    async function deleteCandidato(id) {
+        await fetch(API_URL + '/' + id, {
+            method: 'DELETE'
+        });
+
+        await loadCandidatos();
+    }
+
+    loadCandidatos();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"
+        integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"
+        integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ"
+        crossorigin="anonymous"></script>
+</body>
+</html>
